@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Ponto & Banco de Horas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220;
+    --bg-elev:#101a2c;
+    --card:#131C2E;
+    --card-border:#22304a;
+    --text:#E8ECF4;
+    --muted:#8B96AB;
+    --blue:#3B82F6;
+    --orange:#F59E0B;
+    --green:#22C55E;
+    --red:#F0555A;
+    --dash:#2b3854;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #142038 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, #101c30 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    padding:32px 16px 80px;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  header{margin-bottom:28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--orange);
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Sora',sans-serif;
+    font-weight:800;
+    font-size:clamp(24px,4vw,34px);
+    margin:0 0 6px;
+    letter-spacing:-.01em;
+  }
+  .sub{color:var(--muted);font-size:14px;max-width:560px;line-height:1.5;}
+
+  .grid{display:grid;grid-template-columns:1fr;gap:18px;}
+  @media(min-width:840px){ .grid.two{grid-template-columns:1.3fr .9fr;} }
+
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--bg-elev));
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:20px 22px;
+  }
+  .card h2{
+    font-family:'Sora',sans-serif;
+    font-size:15px;
+    font-weight:700;
+    margin:0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);}
+
+  label{
+    display:block;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin-bottom:5px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  input[type=time], input[type=date], input[type=text], input[type=number]{
+    width:100%;
+    background:#0d1626;
+    border:1px solid var(--card-border);
+    color:var(--text);
+    border-radius:8px;
+    padding:9px 10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    font-variant-numeric:tabular-nums;
+  }
+  input:focus{outline:2px solid var(--blue);outline-offset:1px;}
+
+  .field-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+  .field-row > div{flex:1;min-width:110px;}
+
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  button{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    border-radius:8px;
+    padding:9px 14px;
+    cursor:pointer;
+    border:1px solid var(--card-border);
+    background:#0d1626;
+    color:var(--text);
+    transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:var(--blue);}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#08111f;}
+  button.primary:hover{background:#5b98fb;}
+  button.ghost{background:transparent;}
+
+  .result{
+    margin-top:16px;
+    padding-top:16px;
+    border-top:1px solid var(--card-border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .result .metric .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;}
+  .result .metric .v{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;}
+
+  .stamp{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:700;
+    font-size:13px;
+    border:2px solid currentColor;
+    border-radius:8px;
+    padding:8px 14px;
+    letter-spacing:.06em;
+    transform:rotate(-3deg);
+    display:inline-block;
+  }
+  .stamp.pos{color:var(--green);}
+  .stamp.neg{color:var(--red);}
+  .stamp.zero{color:var(--muted);}
+
+  /* conversor */
+  .conv-row{display:flex;gap:10px;align-items:flex-end;margin-bottom:10px;}
+  .conv-row > div{flex:1;}
+  .conv-arrow{color:var(--muted);padding-bottom:9px;font-family:'IBM Plex Mono',monospace;}
+  .conv-out{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:15px;
+    background:#0d1626;
+    border:1px solid var(--card-border);
+    border-radius:8px;
+    padding:9px 10px;
+    color:var(--orange);
+    min-height:38px;
+    display:flex;align-items:center;
+  }
+
+  table{width:100%;border-collapse:collapse;margin-top:8px;}
+  thead th{
+    text-align:left;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    padding:6px 8px;
+    border-bottom:1px solid var(--card-border);
+  }
+  tbody td{
+    padding:9px 8px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    border-bottom:1px dashed var(--dash);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  .neg-text{color:var(--red);}
+  .pos-text{color:var(--green);}
+  .rm-row{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;}
+  .rm-row:hover{color:var(--red);}
+
+  .banco-total{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 0 4px;
+  }
+  .banco-total .v{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;}
+  .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px;}
+  .empty{color:var(--muted);font-size:13px;padding:10px 0;}
+  footer{text-align:center;color:var(--muted);font-size:11px;margin-top:36px;font-family:'IBM Plex Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Controle de jornada</div>
+    <h1>Ponto & banco de horas</h1>
+    <div class="sub">Registre entrada e saída, veja o saldo do dia em horas:minutos e acompanhe o banco de horas acumulado. Inclui um conversor para os números decimais do sistema da empresa.</div>
+  </header>
+
+  <div class="grid two">
+    <!-- Registro do dia -->
+    <div class="card">
+      <h2><span class="dot" style="background:var(--blue)"></span>Registrar dia</h2>
+
+      <div class="field-row">
+        <div>
+          <label>Data</label>
+          <input type="date" id="dataInput">
+        </div>
+        <div>
+          <label>Jornada do dia</label>
+          <input type="text" id="jornadaInput" value="8:16" placeholder="8:16">
+        </div>
+        <div>
+          <label>Pausa fixa (almoço)</label>
+          <input type="text" id="almocoInput" value="1:00" placeholder="1:00">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <label>Entrada</label>
+          <input type="time" id="entradaInput">
+        </div>
+        <div>
+          <label>Saída</label>
+          <input type="time" id="saidaInput">
+        </div>
+        <div>
+          <label>Saída prevista</label>
+          <div class="conv-out" id="previstaOut">—</div>
+        </div>
+      </div>
+
+      <div class="result">
+        <div class="metric">
+          <div class="k">Trabalhado</div>
+          <div class="v" id="trabalhadoOut">—</div>
+        </div>
+        <div class="metric">
+          <div class="k">Saldo do dia</div>
+          <div class="v" id="saldoOut">—</div>
+        </div>
+        <div id="stampOut"></div>
+      </div>
+
+      <div class="btnrow" style="margin-top:16px;">
+        <button class="primary" id="saveDay">Salvar no banco de horas</button>
+      </div>
+      <div class="hint" id="saveMsg"></div>
+    </div>
+
+    <!-- Conversor -->
+    <div class="card">
+      <h2><span class="dot" style="background:var(--orange)"></span>Conversor do sistema</h2>
+      <div class="hint" style="margin-top:-6px;margin-bottom:14px;">
+        O relatório da empresa mostra em <b>decimal</b> (ex: 0.65, 1.11, 5.80). Aqui a parte depois do ponto é fração de 60 min, não minutos direto.
+      </div>
+
+      <div class="conv-row">
+        <div>
+          <label>Valor decimal (ex: 5.80)</label>
+          <input type="text" id="decIn" placeholder="5.80">
+        </div>
+        <div class="conv-arrow">→</div>
+        <div>
+          <label>Horas : minutos</label>
+          <div class="conv-out" id="decOut">—</div>
+        </div>
+      </div>
+
+      <div class="conv-row">
+        <div>
+          <label>Horas : minutos (ex: 5:48)</label>
+          <input type="text" id="hmIn" placeholder="5:48">
+        </div>
+        <div class="conv-arrow">→</div>
+        <div>
+          <label>Valor decimal</label>
+          <div class="conv-out" id="hmOut">—</div>
+        </div>
+      </div>
+
+      <div class="hint">
+        Fórmula: minutos = parte decimal × 60. Ex.: 0.65 → 39min · 1.11 → ≈1h07min · 5.80 → 5h48min.
+      </div>
+    </div>
+  </div>
+
+  <!-- Banco de horas -->
+  <div class="card" style="margin-top:18px;">
+    <h2><span class="dot" style="background:var(--green)"></span>Banco de horas acumulado</h2>
+    <div id="loadingMsg" class="empty">Carregando…</div>
+    <div id="bancoContent" style="display:none;">
+      <table id="bancoTable">
+        <thead>
+          <tr><th>Data</th><th>Jornada</th><th>Trabalhado</th><th>Saldo</th><th></th></tr>
+        </thead>
+        <tbody id="bancoBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty" style="display:none;">Nenhum dia salvo ainda. Registre um dia acima para começar.</div>
+      <div class="banco-total">
+        <div>
+          <div class="k" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'IBM Plex Mono',monospace;">Saldo total do banco</div>
+          <div class="v" id="totalOut">—</div>
+        </div>
+        <button class="ghost" id="resetBtn">Limpar tudo</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>dados salvos apenas neste dispositivo/conta · uso pessoal</footer>
+</div>
+
+<script>
+// ---------- helpers ----------
+function parseHM(str){
+  if(!str) return null;
+  str = str.trim().replace(',', '.');
+  let m = str.match(/^(\d{1,3})[:h](\d{1,2})m?$/i) || str.match(/^(\d{1,3}):(\d{1,2})$/);
+  if(m){
+    const h = parseInt(m[1],10), min = parseInt(m[2],10);
+    if(min>59) return null;
+    return h*60+min;
+  }
+  return null;
+}
+function minToHM(min){
+  const sign = min<0 ? '-' : '';
+  min = Math.abs(Math.round(min));
+  const h = Math.floor(min/60), m = min%60;
+  return `${sign}${h}h${String(m).padStart(2,'0')}min`;
+}
+function minToDecimal(min){
+  return (min/60).toFixed(2);
+}
+function decimalToMin(dec){
+  const num = parseFloat(String(dec).replace(',','.'));
+  if(isNaN(num)) return null;
+  const sign = num<0 ? -1 : 1;
+  const abs = Math.abs(num);
+  const h = Math.floor(abs);
+  const frac = abs - h;
+  const m = Math.round(frac*60);
+  return sign*(h*60+m);
+}
+function timeStrToMin(t){ // "HH:MM" from <input type=time>
+  if(!t) return null;
+  const [h,m] = t.split(':').map(Number);
+  return h*60+m;
+}
+
+// ---------- conversor ----------
+const decIn = document.getElementById('decIn');
+const decOut = document.getElementById('decOut');
+const hmIn = document.getElementById('hmIn');
+const hmOut = document.getElementById('hmOut');
+
+decIn.addEventListener('input', ()=>{
+  const min = decimalToMin(decIn.value);
+  decOut.textContent = min===null ? '—' : minToHM(min);
+});
+hmIn.addEventListener('input', ()=>{
+  const min = parseHM(hmIn.value);
+  hmOut.textContent = min===null ? '—' : minToDecimal(min);
+});
+
+// default date = today
+document.getElementById('dataInput').value = new Date().toISOString().slice(0,10);
+
+// ---------- calc ----------
+const jornadaInput = document.getElementById('jornadaInput');
+const almocoInput = document.getElementById('almocoInput');
+const entradaInput = document.getElementById('entradaInput');
+const saidaInput = document.getElementById('saidaInput');
+const previstaOut = document.getElementById('previstaOut');
+const trabalhadoOut = document.getElementById('trabalhadoOut');
+const saldoOut = document.getElementById('saldoOut');
+const stampOut = document.getElementById('stampOut');
+
+let lastTrabalhadoMin = null;
+let lastSaldoMin = null;
+
+function minToTimeStr(min){
+  min = ((min%1440)+1440)%1440; // normaliza dentro de 24h
+  const h = Math.floor(min/60), m = min%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function calc(){
+  const entradaMin = timeStrToMin(entradaInput.value);
+  const saidaMin = timeStrToMin(saidaInput.value);
+  const jornadaMin = parseHM(jornadaInput.value);
+  const almocoMin = parseHM(almocoInput.value) ?? 0;
+
+  // saída prevista = entrada + jornada + almoço
+  if(entradaMin!==null && jornadaMin!==null){
+    previstaOut.textContent = minToTimeStr(entradaMin + jornadaMin + almocoMin);
+  } else {
+    previstaOut.textContent = '—';
+  }
+
+  if(entradaMin===null || saidaMin===null || jornadaMin===null){
+    trabalhadoOut.textContent = '—';
+    saldoOut.textContent = '—';
+    stampOut.innerHTML = '';
+    lastTrabalhadoMin = null;
+    lastSaldoMin = null;
+    return;
+  }
+
+  let bruto = saidaMin - entradaMin;
+  if(bruto<0) bruto += 24*60; // virou o dia
+  const total = bruto - almocoMin; // desconta almoço fixo
+
+  const saldo = total - jornadaMin;
+  trabalhadoOut.textContent = minToHM(total);
+  saldoOut.textContent = (saldo>=0?'+':'') + minToHM(saldo);
+  lastTrabalhadoMin = total;
+  lastSaldoMin = saldo;
+
+  let cls = 'zero', label = 'sem saldo';
+  if(saldo>0){ cls='pos'; label = `crédito de ${minToHM(saldo)}`; }
+  if(saldo<0){ cls='neg'; label = `débito de ${minToHM(Math.abs(saldo))}`; }
+  stampOut.innerHTML = `<div class="stamp ${cls}">${label}</div>`;
+}
+[jornadaInput, almocoInput, entradaInput, saidaInput].forEach(el=>{
+  el.addEventListener('input', calc);
+});
+calc();
+
+// ---------- storage / banco de horas ----------
+const loadingMsg = document.getElementById('loadingMsg');
+const bancoContent = document.getElementById('bancoContent');
+const bancoBody = document.getElementById('bancoBody');
+const emptyState = document.getElementById('emptyState');
+const totalOut = document.getElementById('totalOut');
+const saveMsg = document.getElementById('saveMsg');
+
+let entries = []; // {id, date, jornadaMin, trabalhadoMin, saldoMin}
+
+async function loadEntries(){
+  try{
+    const res = await window.storage.get('ponto:entries', false);
+    entries = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    entries = [];
+  }
+  loadingMsg.style.display = 'none';
+  bancoContent.style.display = 'block';
+  render();
+}
+
+async function persist(){
+  try{
+    await window.storage.set('ponto:entries', JSON.stringify(entries), false);
+  }catch(e){
+    saveMsg.textContent = 'Não foi possível salvar agora — tente de novo em instantes.';
+  }
+}
+
+function render(){
+  bancoBody.innerHTML = '';
+  if(entries.length===0){
+    emptyState.style.display = 'block';
+  } else {
+    emptyState.style.display = 'none';
+    entries.slice().sort((a,b)=> a.date < b.date ? 1 : -1).forEach(e=>{
+      const tr = document.createElement('tr');
+      const saldoClass = e.saldoMin>0 ? 'pos-text' : (e.saldoMin<0 ? 'neg-text' : '');
+      tr.innerHTML = `
+        <td>${formatDate(e.date)}</td>
+        <td>${minToHM(e.jornadaMin)}</td>
+        <td>${minToHM(e.trabalhadoMin)}</td>
+        <td class="${saldoClass}">${(e.saldoMin>=0?'+':'')+minToHM(e.saldoMin)}</td>
+        <td><button class="rm-row" data-id="${e.id}" title="remover">×</button></td>
+      `;
+      bancoBody.appendChild(tr);
+    });
+    bancoBody.querySelectorAll('.rm-row').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        entries = entries.filter(e=>e.id !== btn.dataset.id);
+        await persist();
+        render();
+      });
+    });
+  }
+  const totalMin = entries.reduce((s,e)=>s+e.saldoMin,0);
+  totalOut.textContent = (totalMin>=0?'+':'') + minToHM(totalMin) + `  (${minToDecimal(totalMin)}h)`;
+  totalOut.style.color = totalMin>0 ? 'var(--green)' : (totalMin<0 ? 'var(--red)' : 'var(--text)');
+}
+
+function formatDate(d){
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+document.getElementById('saveDay').addEventListener('click', async ()=>{
+  calc();
+  const date = document.getElementById('dataInput').value;
+  const jornadaMin = parseHM(jornadaInput.value);
+  if(!date){ saveMsg.textContent = 'Escolha uma data.'; return; }
+  if(lastTrabalhadoMin===null || jornadaMin===null){
+    saveMsg.textContent = 'Preencha entrada, saída e jornada corretamente.';
+    return;
+  }
+  entries = entries.filter(e=>e.date !== date); // sobrescreve o mesmo dia
+  entries.push({
+    id: date+'-'+Date.now(),
+    date, jornadaMin,
+    trabalhadoMin: lastTrabalhadoMin,
+    saldoMin: lastSaldoMin
+  });
+  await persist();
+  render();
+  saveMsg.textContent = `Dia ${formatDate(date)} salvo.`;
+  setTimeout(()=>{ saveMsg.textContent=''; }, 2500);
+});
+
+document.getElementById('resetBtn').addEventListener('click', async ()=>{
+  if(!confirm('Apagar todos os dias salvos do banco de horas?')) return;
+  entries = [];
+  await persist();
+  render();
+});
+
+loadEntries();
+</script>
+</body>
+</html>
